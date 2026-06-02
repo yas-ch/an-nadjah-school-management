@@ -1,0 +1,91 @@
+# =============================================================================
+# AN-NADJAH — Docker Compose
+# =============================================================================
+# Neon PostgreSQL is external (SaaS). Set DATABASE_URL in your .env file.
+#   DATABASE_URL="postgresql://user:pass@ep-xxx.aws.neon.tech/neondb?sslmode=require"
+# =============================================================================
+
+services:
+  # ─── Next.js Application ──────────────────────────────────────────────────
+  app:
+    profiles:
+      - production
+      - development
+    container_name: annadjah-app
+    restart: unless-stopped
+
+    # ── Build ──
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: ${DOCKER_TARGET:-runner}
+
+    # ── Ports ──
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+    # ── Environment ──
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - NEXT_TELEMETRY_DISABLED=1
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+
+    # ── Health Check ──
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/auth/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # ── Logging ──
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Development Override ─────────────────────────────────────────────────
+  app-dev:
+    profiles:
+      - development
+    container_name: annadjah-dev
+    restart: unless-stopped
+
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: deps
+      args:
+        - NODE_ENV=development
+
+    ports:
+      - "${APP_DEV_PORT:-3000}:3000"
+
+    volumes:
+      - ..:/app
+      - /app/node_modules
+      - /app/.next
+
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+
+    command: npx next dev
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ─── Networks ───────────────────────────────────────────────────────────────
+networks:
+  default:
+    name: annadjah-network

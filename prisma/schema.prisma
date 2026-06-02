@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // Neon requires SSL, set via connection string param sslmode=require
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("student")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentId  String?
+  parent    User?    @relation("ParentChildren", fields: [parentId], references: [id])
+  children  User[]   @relation("ParentChildren")
+
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  classes        Class[]          @relation("TeacherClasses")
+  grades         Grade[]
+  attendance     Attendance[]
+  resources      Resource[]
+  announcements  Announcement[]
+  teacherNotes   SharedNote[]   @relation("TeacherNotes")
+  studentNotes   SharedNote[]   @relation("StudentNotes")
+  subjects       Subject[]      @relation("TeacherSubjects")
+
+  @@index([role])
+  @@index([parentId])
+}
+
+model StudentProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grade      String
+  guardian   String
+  phone      String
+  address    String
+  enrolledAt DateTime @default(now())
+}
+
+model TeacherProfile {
+  id         String @id @default(cuid())
+  userId     String @unique
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherId  String @unique
+  department String
+  phone      String
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  section   String
+  teacherId String
+  teacher   User     @relation("TeacherClasses", fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  grades       Grade[]
+  attendance   Attendance[]
+  resources    Resource[]
+  announcements Announcement[]
+  sharedNotes  SharedNote[]
+
+  @@index([teacherId])
+}
+
+model Grade {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  subject   String
+  score     Float
+  grade     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, classId, subject])
+  @@index([classId])
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  date      DateTime
+  time      String?
+  subject   String?
+  status    String   @default("present")
+  justified Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, date])
+  @@index([classId, date])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  type        String
+  url         String
+  description String?
+  teacherId   String
+  classId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher User  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class? @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([classId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  type      String
+  teacherId String
+  classId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher User  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class? @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([classId])
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?
+  teacherId String?
+  teacher   User?    @relation("TeacherSubjects", fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([teacherId])
+}
+
+model SharedNote {
+  id              String   @id @default(cuid())
+  content         String
+  type            String
+  subject         String?
+  academicNote    String?
+  behaviorNote    String?
+  recommendation  String?
+  status          String   @default("active")
+  teacherId       String
+  studentId       String?
+  classId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  teacher User  @relation("TeacherNotes", fields: [teacherId], references: [id], onDelete: Cascade)
+  student User? @relation("StudentNotes", fields: [studentId], references: [id], onDelete: SetNull)
+  class   Class? @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([studentId])
+  @@index([classId])
+}

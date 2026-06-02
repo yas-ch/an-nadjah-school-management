@@ -1,0 +1,53 @@
+# =============================================================================
+# AN-NADJAH — Docker Ignore
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+.pnpm-store
+.npm
+
+# Next.js
+.next
+out
+.cache
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+docker/
+Dockerfile
+docker-compose*
+
+# Prisma (generated at build time)
+node_modules/.prisma
+
+# Misc
+coverage
+cypress
+test-results
+*.tsbuildinfo
