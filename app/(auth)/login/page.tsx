@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n-context";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,10 +34,10 @@ export default function LoginPage() {
       }
 
       const role = data.user?.role;
-      if (role === "admin") router.push("/admin");
-      else if (role === "teacher") router.push("/teacher");
-      else if (role === "parent") router.push("/parent");
-      else if (role === "student") router.push("/student");
+      if (role === "admin") window.location.href = "/admin";
+      else if (role === "teacher") window.location.href = "/teacher";
+      else if (role === "parent") window.location.href = "/parent";
+      else if (role === "student") window.location.href = "/student";
       else {
         setError(t("common.error"));
       }

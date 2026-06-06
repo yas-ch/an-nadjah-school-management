@@ -25,10 +25,20 @@ function getDashboardForRole(role: string | null): string | null {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const cookieHeader = request.headers.get("cookie");
   const token = request.cookies.get("token")?.value;
+  const hasCookieHeader = !!cookieHeader;
+  const hasTokenCookie = !!token;
+
   let payload = null;
   if (token) {
     payload = await verifyToken(token);
+  }
+
+  if (!hasTokenCookie && hasCookieHeader) {
+    console.warn(
+      `[middleware] ${pathname}: Cookie header present but "token" cookie missing`
+    );
   }
 
   if (pathname.startsWith("/api")) {
@@ -52,7 +62,12 @@ export async function proxy(request: NextRequest) {
   for (const [prefix, role] of Object.entries(roleRoutes)) {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) {
       if (!payload) {
-        console.warn(`[middleware] Redirect ${pathname} → /login (no token)`);
+        const reason = !token
+          ? "no token cookie"
+          : "token verification failed";
+        console.warn(
+          `[middleware] Redirect ${pathname} → /login (${reason})`
+        );
         const loginUrl = new URL("/login", request.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);

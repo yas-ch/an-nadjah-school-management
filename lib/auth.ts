@@ -17,11 +17,20 @@ export async function signToken(payload: JWTPayload): Promise<string> {
     .sign(JWT_SECRET);
 }
 
-export async function verifyToken(token: string): Promise<JWTPayload | null> {
+export async function verifyToken(
+  token: string
+): Promise<JWTPayload | null> {
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
     return payload as unknown as JWTPayload;
-  } catch {
+  } catch (err) {
+    if (err instanceof jose.errors.JWTExpired) {
+      console.warn("[auth] Token expired");
+    } else if (err instanceof jose.errors.JWSSignatureVerificationFailed) {
+      console.warn("[auth] Token signature invalid");
+    } else {
+      console.warn("[auth] Token verification failed:", err);
+    }
     return null;
   }
 }
