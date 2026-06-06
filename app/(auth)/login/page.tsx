@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n-context";
 
 export default function LoginPage() {
+  const router = useRouter();
   const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,23 +24,27 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || t('auth.invalidCredentials'));
+        setError(data.error || t("auth.invalidCredentials"));
         return;
       }
 
-      const role = data.user.role;
-      if (role === "admin") window.location.href = "/admin";
-      else if (role === "teacher") window.location.href = "/teacher";
-      else if (role === "parent") window.location.href = "/parent";
-      else window.location.href = "/student";
+      const role = data.user?.role;
+      if (role === "admin") router.push("/admin");
+      else if (role === "teacher") router.push("/teacher");
+      else if (role === "parent") router.push("/parent");
+      else if (role === "student") router.push("/student");
+      else {
+        setError(t("common.error"));
+      }
     } catch {
-      setError(t('common.error'));
+      setError(t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -46,9 +52,11 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900">{t('common.welcomeBack')}</h2>
+      <h2 className="text-2xl font-bold text-gray-900">
+        {t("common.welcomeBack")}
+      </h2>
       <p className="mt-1 text-sm text-gray-500">
-        {t('auth.loginSubtitle')}
+        {t("auth.loginSubtitle")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -63,7 +71,7 @@ export default function LoginPage() {
             htmlFor="email"
             className="block text-sm font-medium text-gray-700"
           >
-            {t('auth.emailLabel')}
+            {t("auth.emailLabel")}
           </label>
           <input
             id="email"
@@ -72,7 +80,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            placeholder={t('auth.emailPlaceholder')}
+            placeholder={t("auth.emailPlaceholder")}
           />
         </div>
 
@@ -81,7 +89,7 @@ export default function LoginPage() {
             htmlFor="password"
             className="block text-sm font-medium text-gray-700"
           >
-            {t('auth.passwordLabel')}
+            {t("auth.passwordLabel")}
           </label>
           <div className="relative mt-1">
             <input
@@ -91,7 +99,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-              placeholder={t('auth.passwordPlaceholder')}
+              placeholder={t("auth.passwordPlaceholder")}
             />
             <button
               type="button"
@@ -115,18 +123,18 @@ export default function LoginPage() {
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            t('auth.loginButton')
+            t("auth.loginButton")
           )}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        {t('auth.noAccount')}{" "}
+        {t("auth.noAccount")}{" "}
         <Link
           href="/register"
           className="font-medium text-primary-600 hover:text-primary-500"
         >
-          {t('auth.registerLink')}
+          {t("auth.registerLink")}
         </Link>
       </p>
     </div>

@@ -3,9 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/passwords";
 import { signToken } from "@/lib/auth";
 
+function isHTTPS(request: Request): boolean {
+  const url = new URL(request.url);
+  if (url.protocol === "https:") return true;
+  if (request.headers.get("x-forwarded-proto") === "https") return true;
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
-    const { email, password, name, role } = await request.json();
+    let email: string, password: string, name: string, role: string;
+    try {
+      const body = await request.json();
+      email = body.email?.trim().toLowerCase();
+      password = body.password;
+      name = body.name?.trim();
+      role = body.role;
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
 
     if (!email || !password || !name || !role) {
       return NextResponse.json(
@@ -32,12 +51,7 @@ export async function POST(request: Request) {
     const hashed = await hashPassword(password);
 
     const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashed,
-        name,
-        role,
-      },
+      data: { email, password: hashed, name, role },
     });
 
     const token = await signToken({
@@ -57,14 +71,16 @@ export async function POST(request: Request) {
 
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHTTPS(request),
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60,
       path: "/",
     });
 
+    console.log(`[auth] Register OK: ${email} (${user.role}) secure=${isHTTPS(request)}`);
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[auth] Register error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

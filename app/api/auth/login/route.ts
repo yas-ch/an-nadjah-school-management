@@ -9,8 +9,14 @@ function validateEnv() {
   if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
   if (missing.length > 0) {
     console.error("[auth] Missing environment variables:", missing.join(", "));
-    throw new Error(`Missing required env vars: ${missing.join(", ")}`);
   }
+}
+
+function isHTTPS(request: Request): boolean {
+  const url = new URL(request.url);
+  if (url.protocol === "https:") return true;
+  if (request.headers.get("x-forwarded-proto") === "https") return true;
+  return false;
 }
 
 export async function POST(request: Request) {
@@ -88,13 +94,13 @@ export async function POST(request: Request) {
 
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHTTPS(request),
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60,
       path: "/",
     });
 
-    console.log(`[auth] Login successful: ${email} (${user.role})`);
+    console.log(`[auth] Login OK: ${email} (${user.role}) secure=${isHTTPS(request)}`);
     return response;
   } catch (err) {
     console.error("[auth] Login error:", err);

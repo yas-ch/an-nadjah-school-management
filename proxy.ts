@@ -13,7 +13,10 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/api")) {
     if (pathname.startsWith("/api/auth/")) return NextResponse.next();
-    if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!payload) {
+      console.warn(`[middleware] API 401: ${pathname} (no valid token)`);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.next();
   }
 
@@ -26,7 +29,16 @@ export async function proxy(request: NextRequest) {
 
   for (const [prefix, role] of Object.entries(roleRoutes)) {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) {
-      if (!payload || payload.role !== role) {
+      if (!payload) {
+        console.warn(`[middleware] Redirect ${pathname} → /login (no token)`);
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+      if (payload.role !== role) {
+        console.warn(
+          `[middleware] Redirect ${pathname} → /login (role ${payload.role} ≠ ${role})`
+        );
         return NextResponse.redirect(new URL("/login", request.url));
       }
       return NextResponse.next();
@@ -37,5 +49,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/teacher/:path*", "/student/:path*", "/parent/:path*", "/api/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/teacher/:path*",
+    "/student/:path*",
+    "/parent/:path*",
+    "/api/:path*",
+  ],
 };
