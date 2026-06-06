@@ -44,6 +44,7 @@ export default function RegisterPage() {
       const r = data.user.role;
       if (r === "admin") window.location.href = "/admin";
       else if (r === "teacher") window.location.href = "/teacher";
+      else if (r === "parent") window.location.href = "/parent";
       else window.location.href = "/student";
     } catch {
       setError(t("common.error"));

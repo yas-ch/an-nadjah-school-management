@@ -35,6 +35,7 @@ export default function LoginPage() {
       const role = data.user.role;
       if (role === "admin") window.location.href = "/admin";
       else if (role === "teacher") window.location.href = "/teacher";
+      else if (role === "parent") window.location.href = "/parent";
       else window.location.href = "/student";
     } catch {
       setError(t('common.error'));
