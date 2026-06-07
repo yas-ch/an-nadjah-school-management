@@ -7,8 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("[prisma] MISSING DATABASE_URL environment variable");
-    throw new Error("DATABASE_URL is not set");
+    console.warn(
+      "[prisma] DATABASE_URL not set — Prisma queries will fail at runtime"
+    );
   }
 
   const client = new PrismaClient({
@@ -18,9 +19,11 @@ function createPrismaClient(): PrismaClient {
         : ["warn", "error"],
   });
 
-  client.$connect().catch((err) => {
-    console.error("[prisma] Failed to connect to database:", err);
-  });
+  if (url) {
+    client.$connect().catch((err) => {
+      console.error("[prisma] Failed to connect to database:", err);
+    });
+  }
 
   return client;
 }
