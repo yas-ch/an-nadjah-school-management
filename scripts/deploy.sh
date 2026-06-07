@@ -12,7 +12,7 @@ set -euo pipefail
 
 APP_NAME="annadjah"
 APP_DIR="/var/www/annadjah"
-PORT="${PORT:-3001}"
+PORT="${PORT:-3000}"
 
 echo "=== AN-NADJAH Deployment ==="
 echo "Target: $APP_DIR"
@@ -71,7 +71,7 @@ pm2 save 2>&1
 # 11. Verify
 echo ""
 echo "=== Deployment Complete ==="
-echo "→ App running on port $PORT (via PM2 cluster mode)"
+echo "→ App running on port $PORT (via PM2)"
 echo ""
 echo "Useful commands:"
 echo "  pm2 status              — check process health"
